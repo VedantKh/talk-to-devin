@@ -14,44 +14,10 @@ interface Message {
 function VoiceInterface({ sessionId, repoUrl }: VoiceInterfaceProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [liveTranscript, setLiveTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const recognitionRef = useRef<any>(null);
-
-  // Initialize speech recognition for live transcription
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-
-      recognitionRef.current.onresult = (event: any) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            setLiveTranscript(prev => prev + transcript + ' ');
-          } else {
-            interim += transcript;
-          }
-        }
-        if (interim) {
-          setLiveTranscript(prev => {
-            const finalPart = prev.split('...')[0] || prev;
-            return finalPart + interim + '...';
-          });
-        }
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-      };
-    }
-  }, []);
 
   const startRecording = async () => {
     try {
@@ -74,12 +40,6 @@ function VoiceInterface({ sessionId, repoUrl }: VoiceInterfaceProps) {
 
       mediaRecorder.start();
       setIsRecording(true);
-      setLiveTranscript('');
-
-      // Start speech recognition for live transcription
-      if (recognitionRef.current) {
-        recognitionRef.current.start();
-      }
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('Failed to access microphone. Please check permissions.');
@@ -90,11 +50,6 @@ function VoiceInterface({ sessionId, repoUrl }: VoiceInterfaceProps) {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-
-      // Stop speech recognition
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
     }
   };
 
@@ -123,8 +78,6 @@ function VoiceInterface({ sessionId, repoUrl }: VoiceInterfaceProps) {
         { role: 'user', content: data.transcript },
         { role: 'assistant', content: data.response },
       ]);
-
-      setLiveTranscript('');
     } catch (error) {
       console.error('Error processing audio:', error);
       alert('Failed to process audio. Please try again.');
@@ -143,7 +96,7 @@ function VoiceInterface({ sessionId, repoUrl }: VoiceInterfaceProps) {
       </div>
 
       <div className="messages-container">
-        {messages.length === 0 && !liveTranscript && (
+        {messages.length === 0 && !isRecording && !isProcessing && (
           <div className="empty-state">
             <p>Click the microphone to start planning</p>
           </div>
@@ -156,17 +109,17 @@ function VoiceInterface({ sessionId, repoUrl }: VoiceInterfaceProps) {
           </div>
         ))}
 
-        {liveTranscript && (
-          <div className="message user live">
-            <div className="message-role">You (live)</div>
-            <div className="message-content">{liveTranscript}</div>
+        {isRecording && (
+          <div className="message user recording">
+            <div className="message-role">You</div>
+            <div className="message-content">Recording... 🎤</div>
           </div>
         )}
 
         {isProcessing && (
           <div className="message assistant processing">
             <div className="message-role">AI</div>
-            <div className="message-content">Thinking...</div>
+            <div className="message-content">Transcribing and thinking...</div>
           </div>
         )}
       </div>

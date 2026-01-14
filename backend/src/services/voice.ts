@@ -3,9 +3,16 @@ import fs from 'fs';
 import path from 'path';
 import { tmpdir } from 'os';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI;
+
+function getOpenAI() {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   try {
@@ -13,7 +20,7 @@ export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
     const tempFilePath = path.join(tmpdir(), `audio-${Date.now()}.webm`);
     fs.writeFileSync(tempFilePath, audioBuffer);
 
-    const transcription = await openai.audio.transcriptions.create({
+    const transcription = await getOpenAI().audio.transcriptions.create({
       file: fs.createReadStream(tempFilePath),
       model: 'whisper-1',
     });
@@ -30,7 +37,7 @@ export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
 
 export async function synthesizeSpeech(text: string): Promise<Buffer> {
   try {
-    const mp3 = await openai.audio.speech.create({
+    const mp3 = await getOpenAI().audio.speech.create({
       model: 'tts-1',
       voice: 'alloy',
       input: text,

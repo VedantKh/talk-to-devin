@@ -1,12 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '../.env' });
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import multer from 'multer';
 import { transcribeAudio, synthesizeSpeech } from './services/voice.js';
 import { chatWithClaude } from './services/claude.js';
 import { connectToDeepWiki } from './services/mcp-client.js';
-
-dotenv.config({ path: '../.env' });
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });

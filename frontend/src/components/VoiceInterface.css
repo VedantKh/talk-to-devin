@@ -75,9 +75,10 @@
   margin-left: auto;
 }
 
-.message.user.live {
+.message.user.recording {
   background: rgba(102, 126, 234, 0.5);
   border: 2px dashed #667eea;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 .message.assistant {
